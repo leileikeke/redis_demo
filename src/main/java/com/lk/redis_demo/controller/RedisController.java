@@ -1,7 +1,9 @@
 package com.lk.redis_demo.controller;
 
-import com.lk.redis_demo.bean.AppResponse;
+import com.lk.redis_demo.common.AppResponse;
 import com.lk.redis_demo.service.RedisService;
+import org.redisson.api.RLock;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -76,6 +78,9 @@ public class RedisController {
         return "end";
     }
 
+    @Autowired
+    private RedissonClient redissonClient;
+
     /**
      * Redisson的简单使用
      *
@@ -84,17 +89,11 @@ public class RedisController {
     @RequestMapping("/deduct_stock1")
     public String deductStock1() {
         String lockKey = "product_001";
-        String clientId = UUID.randomUUID().toString();
+        // ①获取锁对象
+        RLock redisLock = redissonClient.getLock(lockKey);
         try {
-            // setIfAbsent相当于setnx(key,value): 只有在 key 不存在时设置 key 的值。存在则不设置并且返回false
-            // API 提供了超时时间的设置
-            Boolean result = stringRedisTemplate
-                    .opsForValue()
-                    .setIfAbsent(lockKey, clientId, 30, TimeUnit.SECONDS);
-
-            if (!result) {
-                return "error,繁忙,请稍后再试";
-            }
+            // ②加锁 原理: 往redis中写入  并且实现一个'续命'逻辑  30*1/3 = 10s 重置锁的时间
+            redisLock.lock(30, TimeUnit.SECONDS);
             // 业务开始 start...
             // 查看当前库存
             int stock = Integer.parseInt(stringRedisTemplate.opsForValue().get("stock"));
@@ -108,10 +107,8 @@ public class RedisController {
             }
             // 业务结束 end
         } finally {
-            // 判断如果当前的锁是当前客户端加的锁就删除锁
-            if (stringRedisTemplate.opsForValue().get(lockKey).equals(clientId)) {
-                stringRedisTemplate.delete(lockKey);
-            }
+            // ③释放锁
+            redisLock.unlock();
         }
         return "end";
     }

@@ -1,14 +1,10 @@
 package com.lk.redis_demo.service.impl;
 
-import com.lk.redis_demo.bean.AppResponse;
+import com.lk.redis_demo.common.AppResponse;
 import com.lk.redis_demo.dao.RedisDao;
 import com.lk.redis_demo.service.RedisService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 
 /**
  * @description:

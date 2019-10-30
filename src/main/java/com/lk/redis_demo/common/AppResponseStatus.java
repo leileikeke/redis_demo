@@ -1,4 +1,4 @@
-package com.lk.redis_demo.bean;
+package com.lk.redis_demo.common;
 
 /**
  * @description:AppResponse状态码

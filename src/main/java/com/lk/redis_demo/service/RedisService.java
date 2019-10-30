@@ -1,6 +1,6 @@
 package com.lk.redis_demo.service;
 
-import com.lk.redis_demo.bean.AppResponse;
+import com.lk.redis_demo.common.AppResponse;
 
 /**
  * @description:
