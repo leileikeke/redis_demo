@@ -37,7 +37,7 @@ public class RedisController {
     }
 
     /**
-     * 模拟分布式情境下的抢购
+     * redis模拟分布式情境下的抢购
      *
      * @return
      */
@@ -48,7 +48,9 @@ public class RedisController {
         try {
             // setIfAbsent相当于setnx(key,value): 只有在 key 不存在时设置 key 的值。存在则不设置并且返回false
             // API 提供了超时时间的设置
-            Boolean result = stringRedisTemplate.opsForValue().setIfAbsent(lockKey, clientId, 30, TimeUnit.SECONDS);
+            Boolean result = stringRedisTemplate
+                    .opsForValue()
+                    .setIfAbsent(lockKey, clientId, 30, TimeUnit.SECONDS);
 
             if (!result) {
                 return "error,繁忙,请稍后再试";
@@ -66,7 +68,7 @@ public class RedisController {
             }
             // 业务结束 end
         } finally {
-            // 判断如果当前的锁是客户端加的锁就删除锁
+            // 判断如果当前的锁是当前客户端加的锁就删除锁
             if (stringRedisTemplate.opsForValue().get(lockKey).equals(clientId)) {
                 stringRedisTemplate.delete(lockKey);
             }
@@ -74,5 +76,44 @@ public class RedisController {
         return "end";
     }
 
+    /**
+     * Redisson的简单使用
+     *
+     * @return
+     */
+    @RequestMapping("/deduct_stock1")
+    public String deductStock1() {
+        String lockKey = "product_001";
+        String clientId = UUID.randomUUID().toString();
+        try {
+            // setIfAbsent相当于setnx(key,value): 只有在 key 不存在时设置 key 的值。存在则不设置并且返回false
+            // API 提供了超时时间的设置
+            Boolean result = stringRedisTemplate
+                    .opsForValue()
+                    .setIfAbsent(lockKey, clientId, 30, TimeUnit.SECONDS);
+
+            if (!result) {
+                return "error,繁忙,请稍后再试";
+            }
+            // 业务开始 start...
+            // 查看当前库存
+            int stock = Integer.parseInt(stringRedisTemplate.opsForValue().get("stock"));
+            // 判断
+            if (stock > 0) {
+                int reslStock = stock - 1;
+                stringRedisTemplate.opsForValue().set("stock", reslStock + "");
+                System.out.println("扣减成功,剩余库存: " + reslStock + "");
+            } else {
+                System.out.println("库存不足");
+            }
+            // 业务结束 end
+        } finally {
+            // 判断如果当前的锁是当前客户端加的锁就删除锁
+            if (stringRedisTemplate.opsForValue().get(lockKey).equals(clientId)) {
+                stringRedisTemplate.delete(lockKey);
+            }
+        }
+        return "end";
+    }
 
 }
