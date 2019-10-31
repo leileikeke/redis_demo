@@ -2,8 +2,6 @@ package com.lk.redis_demo.controller;
 
 import com.lk.redis_demo.common.AppResponse;
 import com.lk.redis_demo.service.RedisService;
-import org.redisson.api.RLock;
-import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -78,39 +76,43 @@ public class RedisController {
         return "end";
     }
 
-    @Autowired
-    private RedissonClient redissonClient;
+    // TODO:redisson 依赖冲突导致Boolean result = stringRedisTemplate
+    //                    .opsForValue()
+    //                    .setIfAbsent(lockKey, clientId, 30, TimeUnit.SECONDS);bug 返回null
 
-    /**
-     * Redisson的简单使用
-     *
-     * @return
-     */
-    @RequestMapping("/deduct_stock1")
-    public String deductStock1() {
-        String lockKey = "product_001";
-        // ①获取锁对象
-        RLock redisLock = redissonClient.getLock(lockKey);
-        try {
-            // ②加锁 原理: 往redis中写入  并且实现一个'续命'逻辑  30*1/3 = 10s 重置锁的时间
-            redisLock.lock(30, TimeUnit.SECONDS);
-            // 业务开始 start...
-            // 查看当前库存
-            int stock = Integer.parseInt(stringRedisTemplate.opsForValue().get("stock"));
-            // 判断
-            if (stock > 0) {
-                int reslStock = stock - 1;
-                stringRedisTemplate.opsForValue().set("stock", reslStock + "");
-                System.out.println("扣减成功,剩余库存: " + reslStock + "");
-            } else {
-                System.out.println("库存不足");
-            }
-            // 业务结束 end
-        } finally {
-            // ③释放锁
-            redisLock.unlock();
-        }
-        return "end";
-    }
+//    @Autowired
+//    private RedissonClient redissonClient;
+//
+//    /**
+//     * Redisson的简单使用
+//     *
+//     * @return
+//     */
+//    @RequestMapping("/deduct_stock1")
+//    public String deductStock1() {
+//        String lockKey = "product_001";
+//        // ①获取锁对象
+//        RLock redisLock = redissonClient.getLock(lockKey);
+//        try {
+//            // ②加锁 原理: 往redis中写入  并且实现一个'续命'逻辑  30*1/3 = 10s 重置锁的时间
+//            redisLock.lock(30, TimeUnit.SECONDS);
+//            // 业务开始 start...
+//            // 查看当前库存
+//            int stock = Integer.parseInt(stringRedisTemplate.opsForValue().get("stock"));
+//            // 判断
+//            if (stock > 0) {
+//                int reslStock = stock - 1;
+//                stringRedisTemplate.opsForValue().set("stock", reslStock + "");
+//                System.out.println("扣减成功,剩余库存: " + reslStock + "");
+//            } else {
+//                System.out.println("库存不足");
+//            }
+//            // 业务结束 end
+//        } finally {
+//            // ③释放锁
+//            redisLock.unlock();
+//        }
+//        return "end";
+//    }
 
 }
